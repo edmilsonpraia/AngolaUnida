@@ -15,6 +15,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #f8fafc;
   color: #1f2937;
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+@viewport {
+  width: device-width;
+  zoom: 1.0;
+  min-zoom: 1.0;
+  max-zoom: 1.5;
 }
 
 /* Layout principal */
@@ -99,6 +109,10 @@ body {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
+  min-height: 48px;
+  min-width: 48px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn-primary:hover {
@@ -135,7 +149,7 @@ body {
   padding: 0.5rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  font-size: 0.875rem;
+  font-size: 16px; /* Previne zoom em iOS */
   transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
@@ -163,9 +177,89 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
   .main-content {
     flex-direction: column;
   }
+
+  .sidebar-desktop {
+    display: none;
+  }
+
+  .sidebar-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    width: 80%;
+    max-width: 300px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    display: none;
+  }
+  
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  .header-mobile {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+  }
+
+  .menu-toggle {
+    display: block !important;
+  }
+
+  table.responsive-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 12px;
+  }
+  
+  .main-content {
+    padding: 0;
+  }
+  
+  .content-area {
+    padding: 0.5rem;
+  }
+}
+
+.modal-mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1100;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Utilitários básicos */
