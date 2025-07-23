@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/Auth';
 
@@ -10,11 +10,27 @@ interface MenuItem {
   badge?: number;
 }
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isMobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isMobileOpen = false, onMobileClose }) => {
   const { user } = useAuth();
   const location = useLocation();
   const isAdmin = user?.role === 'admin';
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Detectar mudanças de tela
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const menuItems: MenuItem[] = [
     {
@@ -93,304 +109,211 @@ const Sidebar: React.FC = () => {
     setIsExpanded(!isExpanded);
   };
 
+  const handleLinkClick = () => {
+    if (onMobileClose) {
+      onMobileClose();
+    }
+  };
+
   return (
-    <aside style={{
-      background: 'white',
-      width: isExpanded ? '256px' : '80px',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      borderRight: '1px solid #e5e7eb',
-      height: 'calc(100vh - 76px)', // Ajustar baseado na altura do header
-      overflowY: 'auto',
-      transition: 'width 0.3s ease',
-      position: 'relative'
-    }}>
-      {/* Botão para expandir/recolher */}
-      <button 
-        onClick={toggleSidebar}
+    <>
+      {/* Sidebar único que se adapta responsivamente */}
+      <aside 
+        className={`bg-white shadow border-r ${isMobile ? 'sidebar-mobile' : 'sidebar-desktop'} ${isMobileOpen && isMobile ? 'open' : ''}`}
         style={{
-          position: 'absolute',
-          top: '1rem',
-          right: '-12px',
-          background: 'white',
-          border: '1px solid #e5e7eb',
-          borderRadius: '50%',
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          zIndex: 10,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+          width: isMobile ? '80%' : (isExpanded ? '256px' : '80px'),
+          maxWidth: isMobile ? '300px' : 'none',
+          height: isMobile ? '100vh' : 'calc(100vh - 76px)',
+          overflowY: 'auto',
+          transition: isMobile ? 'transform 0.3s ease' : 'width 0.3s ease',
+          position: isMobile ? 'fixed' : 'relative',
+          top: isMobile ? 0 : 'auto',
+          left: isMobile ? 0 : 'auto',
+          zIndex: isMobile ? 1000 : 'auto'
         }}
       >
-        {isExpanded ? '◄' : '►'}
-      </button>
-
-      <nav style={{ padding: '1rem', height: '100%' }}>
-        {/* Seção principal */}
-        <div style={{ marginBottom: '2rem' }}>
-          {filteredMenuItems
-            .filter(item => !item.adminOnly)
-            .map((item) => {
-              const isActive = isActivePath(item.path);
-              
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: isExpanded ? 'space-between' : 'center',
-                    padding: '0.75rem',
-                    marginBottom: '0.25rem',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    textDecoration: 'none',
-                    transition: 'all 0.2s',
-                    background: isActive ? '#dbeafe' : 'transparent',
-                    color: isActive ? '#1d4ed8' : '#6b7280',
-                    borderRight: isActive ? '2px solid #1d4ed8' : 'none'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#f3f4f6';
-                      e.currentTarget.style.color = '#1f2937';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                      e.currentTarget.style.color = '#6b7280';
-                    }
-                  }}
-                  title={!isExpanded ? item.label : ''}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: isExpanded ? '0.75rem' : '0' }}>
-                    <span style={{ fontSize: '1.125rem' }}>{item.icon}</span>
-                    {isExpanded && <span>{item.label}</span>}
-                  </div>
-                  {isExpanded && item.badge && item.badge > 0 && (
-                    <span style={{
-                      background: '#ef4444',
-                      color: 'white',
-                      fontSize: '0.75rem',
-                      padding: '0.125rem 0.5rem',
-                      borderRadius: '9999px',
-                      minWidth: '20px',
-                      textAlign: 'center'
-                    }}>
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-        </div>
-
-        {/* Seção administrativa */}
-        {isAdmin && (
-          <>
-            {isExpanded && (
-              <div style={{ paddingTop: '1rem' }}>
-                <h3 style={{
-                  padding: '0 0.75rem',
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  color: '#6b7280',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  marginBottom: '0.5rem'
-                }}>
-                  Administração
-                </h3>
-              </div>
-            )}
-            <div>
-              {filteredMenuItems
-                .filter(item => item.adminOnly)
-                .map((item) => {
-                  const isActive = isActivePath(item.path);
-                  
-                  return (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: isExpanded ? 'space-between' : 'center',
-                        padding: '0.75rem',
-                        marginBottom: '0.25rem',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.875rem',
-                        fontWeight: '500',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s',
-                        background: isActive ? '#fee2e2' : 'transparent',
-                        color: isActive ? '#b91c1c' : '#6b7280',
-                        borderRight: isActive ? '2px solid #b91c1c' : 'none'
-                      }}
-                      onMouseOver={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.backgroundColor = '#f3f4f6';
-                          e.currentTarget.style.color = '#1f2937';
-                        }
-                      }}
-                      onMouseOut={(e) => {
-                        if (!isActive) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = '#6b7280';
-                        }
-                      }}
-                      title={!isExpanded ? item.label : ''}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: isExpanded ? '0.75rem' : '0' }}>
-                        <span style={{ fontSize: '1.125rem' }}>{item.icon}</span>
-                        {isExpanded && <span>{item.label}</span>}
-                      </div>
-                      {isExpanded && item.badge && item.badge > 0 && (
-                        <span style={{
-                          background: '#ef4444',
-                          color: 'white',
-                          fontSize: '0.75rem',
-                          padding: '0.125rem 0.5rem',
-                          borderRadius: '9999px',
-                          minWidth: '20px',
-                          textAlign: 'center'
-                        }}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-            </div>
-          </>
-        )}
-
-        {/* Seção de configurações */}
-        <div style={{
-          paddingTop: '1rem',
-          marginTop: '1rem',
-          borderTop: '1px solid #e5e7eb'
-        }}>
-          <Link
-            to="/configuracoes"
+        {/* Botão para expandir/recolher - apenas desktop */}
+        {!isMobile && (
+          <button 
+            onClick={toggleSidebar}
+            className="btn-primary"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: isExpanded ? '0.75rem' : '0',
-              justifyContent: isExpanded ? 'flex-start' : 'center',
-              padding: '0.75rem',
-              borderRadius: '0.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              textDecoration: 'none',
-              transition: 'all 0.2s',
-              color: isActivePath('/configuracoes') ? '#1f2937' : '#6b7280',
-              background: isActivePath('/configuracoes') ? '#f3f4f6' : 'transparent'
+              position: 'absolute',
+              top: '1rem',
+              right: '-12px',
+              background: 'white',
+              border: '1px solid #e5e7eb',
+              borderRadius: '50%',
+              width: '24px',
+              height: '24px',
+              color: '#6b7280',
+              zIndex: 10,
+              minHeight: 'auto',
+              minWidth: 'auto',
+              padding: 0
             }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.backgroundColor = '#f3f4f6';
-              e.currentTarget.style.color = '#1f2937';
-            }}
-            onMouseOut={(e) => {
-              if (!isActivePath('/configuracoes')) {
-                e.currentTarget.style.backgroundColor = 'transparent';
-                e.currentTarget.style.color = '#6b7280';
-              }
-            }}
-            title={!isExpanded ? 'Configurações' : ''}
           >
-            <span style={{ fontSize: '1.125rem' }}>⚙️</span>
-            {isExpanded && <span>Configurações</span>}
-          </Link>
-        </div>
-      </nav>
-
-      {/* Informações do usuário na parte inferior */}
-      <div style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: '1rem',
-        borderTop: '1px solid #e5e7eb',
-        background: '#f9fafb',
-        display: isExpanded ? 'block' : 'flex',
-        justifyContent: 'center'
-      }}>
-        {isExpanded ? (
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                background: '#3b82f6',
-                color: 'white',
-                borderRadius: '50%',
-                fontSize: '0.875rem'
-              }}>
-                {user?.nome.charAt(0)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: '#1f2937',
-                  margin: 0,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {user?.nome}
-                </p>
-                <p style={{
-                  fontSize: '0.75rem',
-                  color: '#6b7280',
-                  margin: 0,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {user?.universidade || 'Embaixada de Angola'}
-                </p>
-              </div>
-            </div>
-            {user?.role === 'student' && (
-              <div style={{
-                marginTop: '0.5rem',
-                fontSize: '0.75rem',
-                color: '#6b7280'
-              }}>
-                <p style={{ margin: 0 }}>Curso: {user.curso}</p>
-                <p style={{ margin: 0 }}>Ano: {user.anoFrequencia}º</p>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '32px',
-            height: '32px',
-            background: '#3b82f6',
-            color: 'white',
-            borderRadius: '50%',
-            fontSize: '0.875rem'
-          }}>
-            {user?.nome.charAt(0)}
-          </div>
+            {isExpanded ? '◄' : '►'}
+          </button>
         )}
-      </div>
-    </aside>
+
+        <nav className="p-4 h-full">
+          {/* Seção principal */}
+          <div className="mb-8">
+            {filteredMenuItems
+              .filter(item => !item.adminOnly)
+              .map((item) => {
+                const isActive = isActivePath(item.path);
+                const showExpanded = isMobile || isExpanded;
+                
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleLinkClick}
+                    className={`flex items-center mb-1 p-3 rounded-lg text-sm font-medium transition-colors ${
+                      isActive 
+                        ? 'bg-blue-50 text-blue-600 border-r-2' 
+                        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                    }`}
+                    style={{
+                      justifyContent: showExpanded ? 'space-between' : 'center',
+                      borderRightColor: isActive ? '#1d4ed8' : 'transparent',
+                      textDecoration: 'none'
+                    }}
+                    title={!showExpanded ? item.label : ''}
+                  >
+                    <div className="flex items-center" style={{ gap: showExpanded ? '0.75rem' : '0' }}>
+                      <span style={{ fontSize: '1.125rem' }}>{item.icon}</span>
+                      {showExpanded && <span>{item.label}</span>}
+                    </div>
+                    {showExpanded && item.badge && item.badge > 0 && (
+                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+          </div>
+
+          {/* Seção administrativa */}
+          {isAdmin && (
+            <>
+              {(isMobile || isExpanded) && (
+                <div className="pt-4">
+                  <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Administração
+                  </h3>
+                </div>
+              )}
+              <div>
+                {filteredMenuItems
+                  .filter(item => item.adminOnly)
+                  .map((item) => {
+                    const isActive = isActivePath(item.path);
+                    const showExpanded = isMobile || isExpanded;
+                    
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={handleLinkClick}
+                        className={`flex items-center mb-1 p-3 rounded-lg text-sm font-medium transition-colors ${
+                          isActive 
+                            ? 'angola-red text-white border-r-2' 
+                            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                        style={{
+                          justifyContent: showExpanded ? 'space-between' : 'center',
+                          borderRightColor: isActive ? '#b91c1c' : 'transparent',
+                          textDecoration: 'none'
+                        }}
+                        title={!showExpanded ? item.label : ''}
+                      >
+                        <div className="flex items-center" style={{ gap: showExpanded ? '0.75rem' : '0' }}>
+                          <span style={{ fontSize: '1.125rem' }}>{item.icon}</span>
+                          {showExpanded && <span>{item.label}</span>}
+                        </div>
+                        {showExpanded && item.badge && item.badge > 0 && (
+                          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+              </div>
+            </>
+          )}
+
+          {/* Seção de configurações */}
+          <div className="pt-4 mt-4 border-t">
+            <Link
+              to="/configuracoes"
+              onClick={handleLinkClick}
+              className={`flex items-center p-3 rounded-lg text-sm font-medium transition-colors ${
+                isActivePath('/configuracoes') 
+                  ? 'text-gray-900 bg-gray-100' 
+                  : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+              style={{
+                gap: (isMobile || isExpanded) ? '0.75rem' : '0',
+                justifyContent: (isMobile || isExpanded) ? 'flex-start' : 'center',
+                textDecoration: 'none'
+              }}
+              title={!(isMobile || isExpanded) ? 'Configurações' : ''}
+            >
+              <span style={{ fontSize: '1.125rem' }}>⚙️</span>
+              {(isMobile || isExpanded) && <span>Configurações</span>}
+            </Link>
+          </div>
+        </nav>
+
+        {/* Informações do usuário na parte inferior */}
+        <div className="bg-gray-50 border-t p-4" style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          display: (isMobile || isExpanded) ? 'block' : 'flex',
+          justifyContent: 'center'
+        }}>
+          {(isMobile || isExpanded) ? (
+            <>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm">
+                  {user?.nome.charAt(0)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {user?.nome}
+                  </p>
+                  <p className="text-xs text-gray-600 truncate">
+                    {user?.universidade || 'Embaixada de Angola'}
+                  </p>
+                </div>
+              </div>
+              {user?.role === 'student' && (
+                <div className="mt-2 text-xs text-gray-600">
+                  <p className="mb-0">Curso: {user.curso}</p>
+                  <p className="mb-0">Ano: {user.anoFrequencia}º</p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full text-sm">
+              {user?.nome.charAt(0)}
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* Overlay Mobile - só quando mobile e aberto */}
+      {isMobile && isMobileOpen && (
+        <div className="sidebar-overlay open" onClick={onMobileClose}></div>
+      )}
+    </>
   );
 };
 

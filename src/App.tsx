@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/Auth';
 import Header from './components/header';
@@ -21,22 +21,41 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // Layout para usuários logados
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  const toggleMobileSidebar = () => {
+    setIsMobileSidebarOpen(!isMobileSidebarOpen);
+  };
+
+  const closeMobileSidebar = () => {
+    setIsMobileSidebarOpen(false);
+  };
+
+  // Fechar sidebar ao redimensionar para desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   if (!isAuthenticated) {
     return <>{children}</>;
   }
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header />
-      <div style={{ display: 'flex', flex: 1 }}>
-        <Sidebar />
-        <div style={{
-          flex: 1,
-          background: '#f8fafc',
-          overflowY: 'auto',
-          padding: '1.5rem'
-        }}>
+    <div className="app-layout">
+      <Header onMobileMenuToggle={toggleMobileSidebar} />
+      <div className="main-content">
+        <Sidebar 
+          isMobileOpen={isMobileSidebarOpen}
+          onMobileClose={closeMobileSidebar}
+        />
+        <div className="content-area">
           {children}
         </div>
       </div>
@@ -106,27 +125,17 @@ const Dashboard: React.FC = () => {
         gap: '1.5rem',
         marginBottom: '1.5rem'
       }}>
-        <div style={{
-          background: 'white',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e5e7eb',
-          padding: '1.5rem'
-        }}>
+        <div className="card p-6">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280', margin: 0 }}>
+              <p className="text-sm font-medium text-gray-500 mb-1">
                 {user?.role === 'admin' ? 'Total Estudantes' : 'Documentos Prontos'}
               </p>
-              <p style={{ fontSize: '1.875rem', fontWeight: '700', color: '#16a34a', margin: '0.25rem 0' }}>
+              <p className="text-3xl font-bold text-green-600">
                 {user?.role === 'admin' ? '247' : '2'}
               </p>
             </div>
-            <div style={{
-              background: '#dcfce7',
-              padding: '0.75rem',
-              borderRadius: '50%'
-            }}>
+            <div className="bg-green-100 p-3 rounded-full">
               <span style={{ fontSize: '1.5rem' }}>
                 {user?.role === 'admin' ? '👥' : '✅'}
               </span>
@@ -134,42 +143,26 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div style={{
-          background: 'white',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e5e7eb',
-          padding: '1.5rem'
-        }}>
+        <div className="card p-6">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280', margin: 0 }}>
+              <p className="text-sm font-medium text-gray-500 mb-1">
                 {user?.role === 'admin' ? 'Docs Pendentes' : 'Em Processo'}
               </p>
               <p style={{ fontSize: '1.875rem', fontWeight: '700', color: '#eab308', margin: '0.25rem 0' }}>
                 {user?.role === 'admin' ? '23' : '1'}
               </p>
             </div>
-            <div style={{
-              background: '#fef3c7',
-              padding: '0.75rem',
-              borderRadius: '50%'
-            }}>
+            <div className="bg-yellow-100 p-3 rounded-full">
               <span style={{ fontSize: '1.5rem' }}>⏳</span>
             </div>
           </div>
         </div>
 
-        <div style={{
-          background: 'white',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e5e7eb',
-          padding: '1.5rem'
-        }}>
+        <div className="card p-6">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280', margin: 0 }}>
+              <p className="text-sm font-medium text-gray-500 mb-1">
                 {user?.role === 'admin' ? 'Docs Prontos' : 'Pendentes'}
               </p>
               <p style={{ fontSize: '1.875rem', fontWeight: '700', color: user?.role === 'admin' ? '#16a34a' : '#dc2626', margin: '0.25rem 0' }}>
@@ -190,158 +183,69 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Próximas ações */}
-      <div style={{
-        background: 'white',
-        borderRadius: '0.5rem',
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e5e7eb'
-      }}>
-        <div style={{
-          padding: '1.5rem',
-          borderBottom: '1px solid #e5e7eb'
-        }}>
-          <h2 style={{
-            fontSize: '1.125rem',
-            fontWeight: '600',
-            color: '#1f2937',
-            margin: 0
-          }}>
+      <div className="card">
+        <div className="p-6 border-b">
+          <h2 className="text-lg font-semibold text-gray-900">
             {user?.role === 'admin' ? 'Ações Urgentes' : 'Próximas Ações'}
           </h2>
         </div>
-        <div style={{ padding: '1.5rem' }}>
+        <div className="p-6">
           {user?.role === 'admin' ? (
             // Conteúdo para admin
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '1rem',
-                background: '#fef2f2',
-                borderRadius: '0.5rem',
-                border: '1px solid #fecaca'
-              }}>
-                <div style={{
-                  flexShrink: 0,
-                  width: '48px',
-                  height: '48px',
-                  background: '#dc2626',
-                  borderRadius: '0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{ fontSize: '1.5rem', color: 'white' }}>⚠️</span>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-xl">⚠️</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1f2937', margin: '0 0 0.25rem 0' }}>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">
                     5 Aprovações Pendentes
                   </h4>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+                  <p className="text-sm text-gray-600">
                     Solicitações de documentos aguardando aprovação
                   </p>
                 </div>
-                <button style={{
-                  background: '#dc2626',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  border: 'none',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer'
-                }}>
+                <button className="btn-primary bg-red-600 hover:bg-red-700">
                   Revisar
                 </button>
               </div>
 
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '1rem',
-                background: '#fffbeb',
-                borderRadius: '0.5rem',
-                border: '1px solid #fde68a'
-              }}>
-                <div style={{
-                  flexShrink: 0,
-                  width: '48px',
-                  height: '48px',
-                  background: '#f59e0b',
-                  borderRadius: '0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <span style={{ fontSize: '1.5rem', color: 'white' }}>📊</span>
+              <div className="flex items-center gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="flex-shrink-0 w-12 h-12 bg-yellow-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-xl">📊</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1f2937', margin: '0 0 0.25rem 0' }}>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">
                     Relatório Mensal Disponível
                   </h4>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+                  <p className="text-sm text-gray-600">
                     Relatório de Janeiro 2024 pronto para download
                   </p>
                 </div>
-                <button style={{
-                  background: '#f59e0b',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  border: 'none',
-                  fontSize: '0.875rem',
-                  cursor: 'pointer'
-                }}>
+                <button className="btn-primary" style={{ backgroundColor: '#f59e0b' }}>
                   Download
                 </button>
               </div>
             </div>
           ) : (
             // Conteúdo para estudante
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              padding: '1rem',
-              background: '#f0f9ff',
-              borderRadius: '0.5rem',
-              border: '1px solid #bae6fd'
-            }}>
-              <div style={{
-                flexShrink: 0,
-                width: '48px',
-                height: '48px',
-                background: '#3b82f6',
-                borderRadius: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <span style={{ fontSize: '1.5rem', color: 'white' }}>📅</span>
+            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex-shrink-0 w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-xl">📅</span>
               </div>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#1f2937', margin: '0 0 0.25rem 0' }}>
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-gray-900 mb-1">
                   Retirada de Documento
                 </h4>
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0 0 0.25rem 0' }}>
+                <p className="text-sm text-gray-600 mb-1">
                   Registro Criminal - Embaixada de Angola
                 </p>
-                <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: 0 }}>
+                <p className="text-xs text-gray-500">
                   Hoje às 14:00
                 </p>
               </div>
-              <div style={{ flexShrink: 0 }}>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '9999px',
-                  fontSize: '0.75rem',
-                  fontWeight: '500',
-                  background: '#dcfce7',
-                  color: '#166534'
-                }}>
+              <div className="flex-shrink-0">
+                <span className="status-pronto px-3 py-1 rounded-full text-xs font-medium">
                   Confirmado
                 </span>
               </div>
@@ -356,22 +260,15 @@ const Dashboard: React.FC = () => {
 // Páginas temporárias (algumas serão substituídas por componentes completos)
 const DocumentosPageTemp: React.FC = () => (
   <div>
-    <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>
+    <h1 className="text-2xl font-bold text-gray-900 mb-6">
       Meus Documentos
     </h1>
-    <div style={{
-      background: 'white',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e5e7eb',
-      padding: '2rem',
-      textAlign: 'center'
-    }}>
+    <div className="card p-8 text-center">
       <span style={{ fontSize: '4rem' }}>📄</span>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: '1rem 0 0.5rem 0' }}>
+      <h2 className="text-xl font-semibold text-gray-900 mt-4 mb-2">
         Página de Documentos
       </h2>
-      <p style={{ color: '#6b7280', margin: 0 }}>
+      <p className="text-gray-600">
         Esta funcionalidade será implementada em breve
       </p>
     </div>
@@ -380,22 +277,15 @@ const DocumentosPageTemp: React.FC = () => (
 
 const CalendarioPage: React.FC = () => (
   <div>
-    <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>
+    <h1 className="text-2xl font-bold text-gray-900 mb-6">
       Calendário
     </h1>
-    <div style={{
-      background: 'white',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e5e7eb',
-      padding: '2rem',
-      textAlign: 'center'
-    }}>
+    <div className="card p-8 text-center">
       <span style={{ fontSize: '4rem' }}>📅</span>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: '1rem 0 0.5rem 0' }}>
+      <h2 className="text-xl font-semibold text-gray-900 mt-4 mb-2">
         Calendário de Agendamentos
       </h2>
-      <p style={{ color: '#6b7280', margin: 0 }}>
+      <p className="text-gray-600">
         Esta funcionalidade será implementada em breve
       </p>
     </div>
@@ -404,22 +294,15 @@ const CalendarioPage: React.FC = () => (
 
 const ComunicadosPage: React.FC = () => (
   <div>
-    <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>
+    <h1 className="text-2xl font-bold text-gray-900 mb-6">
       Comunicados
     </h1>
-    <div style={{
-      background: 'white',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e5e7eb',
-      padding: '2rem',
-      textAlign: 'center'
-    }}>
+    <div className="card p-8 text-center">
       <span style={{ fontSize: '4rem' }}>💬</span>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: '1rem 0 0.5rem 0' }}>
+      <h2 className="text-xl font-semibold text-gray-900 mt-4 mb-2">
         Comunicados da Embaixada
       </h2>
-      <p style={{ color: '#6b7280', margin: 0 }}>
+      <p className="text-gray-600">
         Esta funcionalidade será implementada em breve
       </p>
     </div>
@@ -428,22 +311,15 @@ const ComunicadosPage: React.FC = () => (
 
 const AdminPage: React.FC = () => (
   <div>
-    <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>
+    <h1 className="text-2xl font-bold text-gray-900 mb-6">
       Painel Administrativo
     </h1>
-    <div style={{
-      background: 'white',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e5e7eb',
-      padding: '2rem',
-      textAlign: 'center'
-    }}>
+    <div className="card p-8 text-center">
       <span style={{ fontSize: '4rem' }}>🛡️</span>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: '1rem 0 0.5rem 0' }}>
+      <h2 className="text-xl font-semibold text-gray-900 mt-4 mb-2">
         Painel Administrativo
       </h2>
-      <p style={{ color: '#6b7280', margin: 0 }}>
+      <p className="text-gray-600">
         Esta funcionalidade será implementada em breve
       </p>
     </div>
@@ -452,22 +328,15 @@ const AdminPage: React.FC = () => (
 
 const ConfiguracoesPage: React.FC = () => (
   <div>
-    <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1f2937', marginBottom: '1rem' }}>
+    <h1 className="text-2xl font-bold text-gray-900 mb-6">
       Configurações
     </h1>
-    <div style={{
-      background: 'white',
-      borderRadius: '0.5rem',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      border: '1px solid #e5e7eb',
-      padding: '2rem',
-      textAlign: 'center'
-    }}>
+    <div className="card p-8 text-center">
       <span style={{ fontSize: '4rem' }}>⚙️</span>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#1f2937', margin: '1rem 0 0.5rem 0' }}>
+      <h2 className="text-xl font-semibold text-gray-900 mt-4 mb-2">
         Configurações do Sistema
       </h2>
-      <p style={{ color: '#6b7280', margin: 0 }}>
+      <p className="text-gray-600">
         Esta funcionalidade será implementada em breve
       </p>
     </div>

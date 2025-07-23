@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/Auth';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onMobileMenuToggle?: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ onMobileMenuToggle }) => {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -45,60 +49,54 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header style={{
-      background: 'white',
-      boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-      borderBottom: '1px solid #e5e7eb',
-      padding: '1rem 1.5rem',
-      position: 'sticky',
-      top: 0,
-      zIndex: 40
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
+    <header className="bg-white shadow border-b p-4 header-mobile">
+      <div className="flex items-center justify-between">
         {/* Logo e título */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="flex items-center space-x-4">
+          {/* Botão menu mobile */}
+          {onMobileMenuToggle && (
+            <button
+              onClick={onMobileMenuToggle}
+              className="menu-toggle btn-primary md:hidden"
+              style={{
+                background: 'none',
+                color: '#6b7280',
+                minHeight: 'auto',
+                minWidth: 'auto',
+                padding: '0.5rem'
+              }}
+            >
+              ☰
+            </button>
+          )}
+          
           <span style={{ fontSize: '2rem' }}>🇦🇴</span>
           <div>
-            <h1 style={{
-              fontSize: '1.25rem',
-              fontWeight: '700',
-              color: '#1f2937',
-              margin: 0
-            }}>
+            <h1 className="text-xl font-bold text-gray-900">
               Angola Uma Só Nação
             </h1>
-            <p style={{
-              fontSize: '0.875rem',
-              color: '#6b7280',
-              margin: 0
-            }}>
+            <p className="text-sm text-gray-500">
               Embaixada de Angola na Rússia
             </p>
           </div>
         </div>
 
         {/* Ações do usuário */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="flex items-center space-x-4">
           {/* Notificações */}
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
+              className="btn-primary"
               style={{
                 position: 'relative',
                 padding: '0.5rem',
                 color: '#6b7280',
                 background: 'none',
-                border: 'none',
                 borderRadius: '50%',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
+                minHeight: 'auto',
+                minWidth: 'auto'
               }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               🔔
               {unreadCount > 0 && (
@@ -123,27 +121,16 @@ const Header: React.FC = () => {
 
             {/* Dropdown de notificações */}
             {showNotifications && (
-              <div style={{
+              <div className="card" style={{
                 position: 'absolute',
                 right: 0,
                 marginTop: '0.5rem',
-                width: '320px',
-                background: 'white',
-                borderRadius: '0.5rem',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e5e7eb',
+                width: 'min(320px, calc(100vw - 2rem))',
+                maxWidth: '320px',
                 zIndex: 50
               }}>
-                <div style={{
-                  padding: '1rem',
-                  borderBottom: '1px solid #e5e7eb'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.125rem',
-                    fontWeight: '600',
-                    color: '#1f2937',
-                    margin: 0
-                  }}>
+                <div className="p-4 border-b">
+                  <h3 className="text-lg font-semibold text-gray-900">
                     Notificações
                   </h3>
                 </div>
@@ -151,40 +138,18 @@ const Header: React.FC = () => {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      style={{
-                        padding: '1rem',
-                        borderBottom: '1px solid #f3f4f6',
-                        cursor: 'pointer'
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
-                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                      className="p-4 border-b hover:bg-gray-100 transition-colors"
+                      style={{ cursor: 'pointer' }}
                     >
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'start'
-                      }}>
+                      <div className="flex justify-between items-start">
                         <div style={{ flex: 1 }}>
-                          <h4 style={{
-                            fontSize: '0.875rem',
-                            fontWeight: '500',
-                            color: '#1f2937',
-                            margin: '0 0 0.25rem 0'
-                          }}>
+                          <h4 className="text-sm font-medium text-gray-900 mb-1">
                             {notification.titulo}
                           </h4>
-                          <p style={{
-                            fontSize: '0.875rem',
-                            color: '#6b7280',
-                            margin: '0 0 0.5rem 0'
-                          }}>
+                          <p className="text-sm text-gray-600 mb-2">
                             {notification.mensagem}
                           </p>
-                          <p style={{
-                            fontSize: '0.75rem',
-                            color: '#9ca3af',
-                            margin: 0
-                          }}>
+                          <p className="text-xs text-gray-500">
                             {formatTimestamp(notification.timestamp)}
                           </p>
                         </div>
@@ -209,131 +174,47 @@ const Header: React.FC = () => {
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.5rem',
-                borderRadius: '0.5rem',
-                cursor: 'pointer',
-                background: 'none',
-                border: 'none',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '32px',
-                height: '32px',
-                background: '#3b82f6',
-                color: 'white',
-                borderRadius: '50%'
-              }}>
+              <div className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full">
                 {user?.nome.charAt(0)}
               </div>
-              <div style={{ textAlign: 'left' }}>
-                <p style={{
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  color: '#1f2937',
-                  margin: 0
-                }}>
+              <div className="text-left hidden md:block">
+                <p className="text-sm font-medium text-gray-900">
                   {user?.nome}
                 </p>
-                <p style={{
-                  fontSize: '0.75rem',
-                  color: '#6b7280',
-                  margin: 0,
-                  textTransform: 'capitalize'
-                }}>
+                <p className="text-xs text-gray-600 text-transform-capitalize">
                   {user?.role === 'admin' ? 'Administrador' : 'Estudante'}
                 </p>
               </div>
-              <span style={{ color: '#6b7280' }}>▼</span>
+              <span className="text-gray-500 hidden md:block">▼</span>
             </button>
 
             {/* Dropdown do usuário */}
             {showUserMenu && (
-              <div style={{
+              <div className="card" style={{
                 position: 'absolute',
                 right: 0,
                 marginTop: '0.5rem',
-                width: '192px',
-                background: 'white',
-                borderRadius: '0.5rem',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e5e7eb',
+                width: 'min(192px, calc(100vw - 2rem))',
+                maxWidth: '192px',
                 zIndex: 50
               }}>
-                <div style={{ padding: '0.5rem' }}>
-                  <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    width: '100%',
-                    padding: '0.5rem',
-                    textAlign: 'left',
-                    fontSize: '0.875rem',
-                    color: '#374151',
-                    background: 'none',
-                    border: 'none',
-                    borderRadius: '0.375rem',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    👤
+                <div className="p-2">
+                  <button className="flex items-center space-x-2 w-full p-2 text-left text-sm text-gray-700 rounded hover:bg-gray-100 transition-colors">
+                    <span>👤</span>
                     <span>Meu Perfil</span>
                   </button>
-                  <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    width: '100%',
-                    padding: '0.5rem',
-                    textAlign: 'left',
-                    fontSize: '0.875rem',
-                    color: '#374151',
-                    background: 'none',
-                    border: 'none',
-                    borderRadius: '0.375rem',
-                    cursor: 'pointer',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    ⚙️
+                  <button className="flex items-center space-x-2 w-full p-2 text-left text-sm text-gray-700 rounded hover:bg-gray-100 transition-colors">
+                    <span>⚙️</span>
                     <span>Configurações</span>
                   </button>
-                  <hr style={{ margin: '0.5rem 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+                  <hr className="my-2 border-t" />
                   <button
                     onClick={handleLogout}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem',
-                      width: '100%',
-                      padding: '0.5rem',
-                      textAlign: 'left',
-                      fontSize: '0.875rem',
-                      color: '#dc2626',
-                      background: 'none',
-                      border: 'none',
-                      borderRadius: '0.375rem',
-                      cursor: 'pointer',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    className="flex items-center space-x-2 w-full p-2 text-left text-sm text-red-600 rounded hover:bg-red-50 transition-colors"
                   >
-                    🚪
+                    <span>🚪</span>
                     <span>Sair</span>
                   </button>
                 </div>
